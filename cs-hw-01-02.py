@@ -127,36 +127,34 @@ class Parser:
         else:
             self.error()
 
-    def term(self):
-        """Парсер для 'term' правил граматики. У нашому випадку - це цілі числа."""
-        if self.current_token.type == TokenType.LPAREN:
-            self.eat(TokenType.LPAREN)
-            node = self.expr()
-            self.eat(TokenType.RPAREN)
-            return node
-        if self.current_token.type == TokenType.INTEGER:
-            return self.factor()
-        token = self.current_token
-        self.eat(TokenType.INTEGER)
-        return Num(token)
-
     def expr(self):
         """Парсер для арифметичних виразів."""
         node = self.term()
 
-        while self.current_token.type in (TokenType.PLUS, TokenType.MINUS, TokenType.MUL, TokenType.DIV):
+        while self.current_token.type in (TokenType.PLUS, TokenType.MINUS):
             token = self.current_token
             if token.type == TokenType.PLUS:
                 self.eat(TokenType.PLUS)
             elif token.type == TokenType.MINUS:
                 self.eat(TokenType.MINUS)
-            elif token.type == TokenType.MUL:
-                self.eat(TokenType.MUL)
-            elif token.type == TokenType.DIV:
-                self.eat(TokenType.DIV)
 
             node = BinOp(left=node, op=token, right=self.term())
 
+        return node
+    
+    def term(self):
+        """Парсер для 'term' правил граматики. У нашому випадку - це цілі числа."""
+        
+        node = self.factor()
+        
+        while self.current_token.type in (TokenType.MUL, TokenType.DIV):
+            token = self.current_token
+            if token.type == TokenType.MUL:
+                self.eat(TokenType.MUL)
+            elif token.type == TokenType.DIV:
+                self.eat(TokenType.DIV)
+            node = BinOp(left=node, op=token, right=self.factor())
+        
         return node
     
     def factor(self):
@@ -167,13 +165,14 @@ class Parser:
             self.eat(TokenType.INTEGER)
             return Num(token)
 
-        if token.type == TokenType.LPAREN:
+        elif token.type == TokenType.LPAREN:
             self.eat(TokenType.LPAREN)
             node = self.expr()
             self.eat(TokenType.RPAREN)
             return node
-
-        self.error()
+        
+        else:
+            self.error()
 
 
 def print_ast(node, level=0):
